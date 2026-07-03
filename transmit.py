@@ -1,16 +1,12 @@
-from amodem.config import bitrates
-from amodem import audio
+from . import iface, config
 from amodem import main
 
-interface = audio.Interface(bitrates[1])
-interface.load(f"dll/libportaudio64bit.dll")
-
-with interface:
+with iface:
         
     main.send(
-        config = bitrates[1], 
+        config = config, 
         src = open("test.txt", 'rb'), 
-        dst = interface.player(),
+        dst = iface.player(),
         gain = 1.0, 
         extra_silence = 0.0
     )
