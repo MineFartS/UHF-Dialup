@@ -1,4 +1,4 @@
-from . import iface, config
+from __init__ import iface, config
 from amodem import main
 
 with iface:
