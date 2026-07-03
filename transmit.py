@@ -1,28 +1,58 @@
-from kiss import encode_kiss_frame, build_ax25_frame
-import socket
+import logging
+import os
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(('127.0.0.1', 8100))
+from amodem import async_reader
+from amodem import audio
+from amodem import calib
+from amodem import main
+from amodem.config import bitrates
 
-def build_frame():
-    ax25_frame = build_ax25_frame(
-    source="NOCALL",
-    dest="APRS",
-    info=b"Message-123",
-    dest_ssid=0,
-    src_ssid=0
-)
+def FileType(mode, interface_factory=None):
+    def opener(fname):
+        audio_interface = interface_factory() if interface_factory else None
 
-ax25_frame = build_ax25_frame(
-    source="NOCALL",
-    dest="APRS",
-    info=b"Message-123",
-    dest_ssid=0,
-    src_ssid=0
-)
+        assert 'r' in mode or 'w' in mode
+        if audio_interface is None and fname is None:
+            fname = '-'
 
-payload = encode_kiss_frame(ax25_frame, port=0)
+        if fname is None:
+            assert audio_interface is not None
+            if 'r' in mode:
+                s = audio_interface.recorder()
+                return async_reader.AsyncReader(stream=s, bufsize=s.bufsize)
+            if 'w' in mode:
+                return audio_interface.player()
 
-s.send(payload)
+        if fname == '-':
+            if 'r' in mode:
+                return _stdin
+            if 'w' in mode:
+                return _stdout
 
-print("Packet sent to modem!")
+        return open(fname, mode)
+
+    return opener
+
+def interface_factory():
+        return interface
+
+def wrap(cls, stream, enable):
+    return cls(stream) if enable else stream
+
+log = logging.getLogger('__name__')
+
+bitrate = os.environ.get('BITRATE', 1)
+config = bitrates.get(int(bitrate))
+
+interface = audio.Interface(config)
+audio_library = r"C:\Users\administrator.PHILH\Documents\GitHub\UHF Dialup\dll\libportaudio64bit.dll"
+interface.load(audio_library)
+
+#src = wrap(Compressor, FileType('rb')("test.csv"), False)
+src = FileType('rb')("_kiss.py")
+dst = FileType('wb', interface_factory)
+
+#dst = FileType('wb', interface_factory)(None)
+#dst = FileType('wb', interface_factory)('test.pcm')
+
+main.send(config, src, dst, gain=1.0, extra_silence=0.0)
