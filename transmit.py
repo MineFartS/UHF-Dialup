@@ -1,21 +1,28 @@
+from kiss import encode_kiss_frame, build_ax25_frame
 import socket
 
-MODEM_IP = '127.0.0.1'
-MODEM_PORT = 8100 # Default for many KISS-over-TCP sound modems
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect(('127.0.0.1', 8100))
 
-# Establish TCP connection to the modem
-try:
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((MODEM_IP, MODEM_PORT))
-    
-    # Send KISS Command: FEND (0xC0), Command Byte (0x00 for Data), Payload, FEND (0xC0)
-    # The payload 'TEST' is a placeholder. AX.25 usually requires headers (e.g., CALLSIGN).
-    payload = b'\xc0\x00TEST\xc0'
-    s.send(payload)
-    
-    print("Packet sent to modem!")
+def build_frame():
+    ax25_frame = build_ax25_frame(
+    source="NOCALL",
+    dest="APRS",
+    info=b"Message-123",
+    dest_ssid=0,
+    src_ssid=0
+)
 
-except Exception as e:
-    print(f"Error: {e}")
-finally:
-    s.close()
+ax25_frame = build_ax25_frame(
+    source="NOCALL",
+    dest="APRS",
+    info=b"Message-123",
+    dest_ssid=0,
+    src_ssid=0
+)
+
+payload = encode_kiss_frame(ax25_frame, port=0)
+
+s.send(payload)
+
+print("Packet sent to modem!")
