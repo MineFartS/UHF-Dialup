@@ -10,3 +10,6 @@ source .venv/bin/activate
 
 # Install Required Python Packages
 python3 -m pip install -r requirements.txt
+
+# Install PortAudio
+sudo apt install -y portaudio19-dev
