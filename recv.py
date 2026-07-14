@@ -1,11 +1,6 @@
-from __init__ import tunnel, cfg
-from audio import audio
-from amodem import main
+from __init__ import tunnel, modem, audio
 
-with tunnel('wb') as tun_stream:
-    main.recv(
-        config = cfg,
-        src = audio(input=True),
-        dst = tun_stream
-    )
-
+modem.recv(
+    src = audio(input=True),
+    dst = tunnel('wb')
+)

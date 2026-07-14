@@ -1,11 +1,7 @@
-from __init__ import tunnel, cfg
-from audio import audio
-from amodem import main
+from __init__ import tunnel, modem, audio
 
-with tunnel('rb') as tun_stream:
-    main.send(
-        config = cfg, 
-        src = tun_stream,
-        dst = audio(output=True)
-    )
+modem.send(
+    src = tunnel('rb'),
+    dst = audio(output=True)
+)
 
