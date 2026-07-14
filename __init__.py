@@ -1,14 +1,5 @@
 from amodem.config import Configuration
-import os, struct, fcntl, pyaudio
-from functools import partial
-
-audio = partial(
-    pyaudio.PyAudio().open,
-    format = pyaudio.paInt16,
-    channels = 1,
-    rate = 8000
-)
-
+import os, sys, fcntl, struct
 
 cfg = Configuration()
 cfg.f_min = 600      # Low end of typical radio audio passband

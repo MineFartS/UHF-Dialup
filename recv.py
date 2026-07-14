@@ -1,4 +1,5 @@
-from __init__ import tunnel, cfg, audio
+from __init__ import tunnel, cfg
+from audio import audio
 from amodem import main
 
 with tunnel('wb') as tun_stream:
