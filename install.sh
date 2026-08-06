@@ -1,22 +1,23 @@
-
 #===============================================
 # Dependencies
 
-# Install Python
-sudo apt install -y python3
-sudo apt install -y python3-pip
-sudo apt install -y python3-venv
+# Install Python & System Dev Libraries
 
-# Create & Activate Python Venv
-python3 -m venv .venv
-source .venv/bin/activate
+sudo apt update
+sudo apt install -y git
+sudo apt install -y python3 python3-pip python3-venv
+sudo apt install -y portaudio19-dev libportaudio2
 
-# Install Required Python Packages
-python3 -m pip install -r requirements.txt
+# Create Python Venv (if it doesn't exist)
+if [ ! -d ".venv" ]; then
+    python3 -m venv .venv
+fi
 
-# Install PortAudio
-sudo apt install -y portaudio19-dev
-sudo apt install -y libportaudio2
+# Upgrade pip inside the venv
+.venv/bin/pip install --upgrade pip
+
+# Install Required Python Packages directly using the venv binary
+.venv/bin/pip install -r requirements.txt
 
 #===============================================
 # Network Tunnel
@@ -25,12 +26,14 @@ sudo apt install -y libportaudio2
 sudo ip tuntap add dev tun0 mode tun
 
 # Assign an IP to Device A
-sudo ip addr add 10.0.0.1/24 dev tun0  # (On Device B, use 10.0.0.2/24)
+sudo ip addr add 10.0.0.1/24 dev tun0
 
 # Bring the interface up
 sudo ip link set dev tun0 up
 
-# Grant Python Network Capabilities
+# Grant the specific Venv Python binary Network Capabilities
 sudo setcap cap_net_admin+ep "$(readlink -f .venv/bin/python3)"
 
 #===============================================
+
+source .venv/bin/activate
