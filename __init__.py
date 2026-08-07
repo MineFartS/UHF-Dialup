@@ -1,7 +1,7 @@
 #=====================================================================
 # Modem
+from philh_myftp_biz.functools import retryfunc
 from amodem.config import Configuration
-from amodem.recv import Receiver
 from amodem import main
 
 cfg = Configuration()
@@ -12,30 +12,24 @@ cfg.timeout = 99999.0        # Force amodem stream.py to wait indefinitely for b
 cfg.silence_start = 0.0      # Disable strict pre-carrier silence checks
 cfg.skip_start = 0.0         # Prevent skipping the initial audio frame blocks
 
-class _modem(Receiver):
+class modem:
     
-    def recv(self, src, dst):
-        while True:
-            try:
-                super().run(
-                    sampler = src,
-                    output = dst,
-                    gain = 1.0
-                )
-            except OSError as e:
-                if 'timeout' in str(e):
-                    continue
-                else:
-                    raise e
+    @retryfunc(3, OSError)
+    @staticmethod
+    def recv(src, dst) -> None:
+        main.recv(
+            config = cfg,
+            src = src,
+            dst = dst
+        )
 
-    def send(self, src, dst) -> None:
+    @staticmethod
+    def send(src, dst) -> None:
         main.send(
             config = cfg, 
             src = src, 
             dst = dst
         )
-
-modem = _modem(config=cfg)
 
 #=====================================================================
 # Tunnel
