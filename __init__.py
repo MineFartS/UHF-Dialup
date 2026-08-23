@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 #=====================================================================
 # Modem
 from philh_myftp_biz.functools import retryfunc
@@ -47,6 +49,7 @@ def tunnel(mode:str):
 
 #=====================================================================
 # Audio
+if TYPE_CHECKING: from pyaudio import _PaDeviceInfo
 from pyaudio import PyAudio, paInt16
 import numpy as np
 
@@ -55,10 +58,15 @@ pya = PyAudio()
 class audio:
 
     def __init__(self, **kwargs) -> None:
+
+        kind: str = next(iter(kwargs))
+        dev: _PaDeviceInfo = getattr(pya, f'get_default_{kind}_device_info') ()
+
         self.stream = pya.open(
             format = paInt16,
             channels = 1,
-            rate = 8000,
+            rate = int(dev['defaultSampleRate']),
+            input_device_index = dev['index'],
             **kwargs
         )
         
