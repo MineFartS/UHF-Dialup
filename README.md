@@ -16,6 +16,6 @@
 ```
 git clone https://github.com/MineFartS/UHF-Dialup
 cd UHF-Dialup
-. install.sh
-python3 node.py
+sudo bash install.sh
+sudo bash run.sh node
 ```
