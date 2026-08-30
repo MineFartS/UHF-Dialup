@@ -1,4 +1,0 @@
-amodem
-numpy<2.0.0
-philh_myftp_biz==2026.08.07
-pyaudio
