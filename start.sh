@@ -8,6 +8,7 @@ fi
 
 LOCAL_IP="10.0.0.$1"
 REMOTE_IP="10.0.0.$2"
+AUDIO_IFACE="plughw:$3,0"
 
 echo "=== PHASE 1: INITIALIZING VIRTUAL COM PIPELINE ==="
 bash ./tty0tty/start.sh
@@ -22,10 +23,16 @@ if [ ! -f ./direwolf/bin/direwolf ]; then
   cd direwolf && make && cd ..
 fi
 
+cp ./direwolf.conf ./direwolf-temp.conf -f
+
+# Dynamically patch the ADEVICE rule structure in the main configuration file
+echo "[*] Dynamically updating configuration to target: ADEVICE $AUDIO_IFACE"
+sed -i "s|^ADEVICE.*|ADEVICE $AUDIO_IFACE|g" ./direwolf-temp.conf
+
 # Wipe old logs to keep diagnostics clear
 rm -f /var/log/direwolf_network.log
 
-bash ./direwolf/run.sh -c ./direwolf.conf > /var/log/direwolf_network.log 2>&1 &
+bash ./direwolf/run.sh -c ./direwolf-temp.conf > /var/log/direwolf_network.log 2>&1 &
 DIREWOLF_PID=$!
 echo $DIREWOLF_PID > /tmp/direwolf_net.pid
 
