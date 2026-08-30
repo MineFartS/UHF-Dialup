@@ -1,0 +1,13 @@
+
+[submodule "direwolf"]
+	path = direwolf
+	url = https://github.com/MineFartsEmbed/DireWolf
+    branch = amd64-debian
+    ignore = all
+
+[submodule "tncattach"]
+	path = tncattach
+	url = https://github.com/MineFartsEmbed/TNC-Attach
+    branch = amd64-debian
+    ignore = all
+
