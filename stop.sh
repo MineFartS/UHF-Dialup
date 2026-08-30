@@ -6,11 +6,16 @@ fi
 
 echo "=== TEARING DOWN IP-OVER-AX25 PIPELINE ==="
 
-# 1. Kill the network link adapter
+# 1. Kill the network link adapter and physically remove the link node descriptor
 if pgrep -f tncattach > /dev/null; then
   echo "Bringing down tncattach instances..."
   pkill -f tncattach
-  ifconfig tnc0 down 2>/dev/null
+fi
+
+if ip link show tnc0 &>/dev/null; then
+  echo "Flushing and deleting virtual adapter tnc0..."
+  ip link set dev tnc0 down 2>/dev/null || true
+  ip link delete dev tnc0 2>/dev/null || true
 fi
 
 # 2. Terminate the packet modem process spawned by your wrapper
