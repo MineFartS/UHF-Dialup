@@ -1,0 +1,16 @@
+{
+    "files.exclude": {
+        
+        ".vscode": true,
+
+        "direwolf/*[!h]": true,
+        "direwolf/*[!s]h": true,
+
+        "tncattach/*[!h]": true,
+        "tncattach/*[!s]h": true,
+
+        "tty0tty/*[!h]": true,
+        "tty0tty/*[!s]h": true
+
+    }
+}
