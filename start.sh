@@ -6,72 +6,44 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
+# Ensure all runtime arguments exist before starting
+if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
+  echo "Usage: sudo bash start.sh <local_octet> <remote_octet> <audio_card_index>"
+  echo "Example: sudo bash start.sh 1 2 3"
+  exit 1
+fi
+
 LOCAL_IP="10.0.0.$1"
 REMOTE_IP="10.0.0.$2"
 AUDIO_IFACE="plughw:$3,0"
+NET_IFACE="tnc0"
+
+# Aggressively flush existing states to clear the port tables
+bash stop.sh
 
 echo "=== PHASE 1: INITIALIZING VIRTUAL COM PIPELINE ==="
 bash ./tty0tty/start.sh
-if [ $? -ne 0 ]; then
-  echo "[X] Critical error during tty0tty instantiation."
-  exit 1
-fi
 
 echo "=== PHASE 2: SPAWNING DIREWOLF PACKET MODEM ==="
-if [ ! -f ./direwolf/bin/direwolf ]; then
-  echo "[*] Compiling direwolf inside untracked directory..."
-  cd direwolf && make && cd ..
-fi
 
 cp ./direwolf.conf ./direwolf-temp.conf -f
 
-# Dynamically patch the ADEVICE rule structure in the main configuration file
+# Dynamically match Direwolf config rules to command line parameters
 echo "[*] Dynamically updating configuration to target: ADEVICE $AUDIO_IFACE"
 sed -i "s|^ADEVICE.*|ADEVICE $AUDIO_IFACE|g" ./direwolf-temp.conf
 
-# Wipe old logs to keep diagnostics clear
-rm -f /var/log/direwolf_network.log
-
 bash ./direwolf/run.sh -c ./direwolf-temp.conf > /var/log/direwolf_network.log 2>&1 &
-DIREWOLF_PID=$!
-echo $DIREWOLF_PID > /tmp/direwolf_net.pid
-
-# Verify background stabilization
-sleep 2
-if ! kill -0 $DIREWOLF_PID 2>/dev/null; then
-  echo "[X] Critical: Direwolf closed immediately after launching!"
-  echo "--- LAST ERROR LOGS ---"
-  cat /var/log/direwolf_network.log
-  echo "-----------------------"
-  exit 1
-fi
-echo "[✓] Direwolf wrapper initialized background daemon (PID: $DIREWOLF_PID)"
+echo "[✓] Direwolf wrapper initialized background daemon (PID: $!)"
 
 echo "=== PHASE 3: BINDING LINUX TNC INTERFACE ==="
-# Cushion time for Direwolf to successfully lock onto /dev/tnt0
-sleep 1.5
 
-# Compile tncattach from source if its binary is absent
-if [ ! -f ./tncattach/tncattach ]; then
-  echo "[*] tncattach binary missing. Compiling from untracked source..."
-  cd tncattach && make && cd ..
-fi
-
-# Hardcode interface target cleanly to bypass dynamic loop issues
-IFACE="tnc0"
-
-# Map interfaces using your specialized tncattach wrapper execution syn
 echo "Configuring Point-to-Point pipeline mapping..."
+bash ./tncattach/run.sh "/dev/tnt1" 115200 -d --noipv6 --mtu 496 > /var/log/tncattach_network.log 2>&1 &
 
-# Invoke wrapper in the background explicitly to safeguard against foreground lockups
-bash ./tncattach/run.sh /dev/tnt1 115200 -d --noipv6 --noup --mtu 496 > /var/log/tncattach_network.log 2>&1 &
-sleep 1.0
+# BIND NETWORKING LAYER: Inject the precise point-to-point endpoints
+ip addr flush dev "$NET_IFACE" 2>/dev/null || true
+ip addr add "$LOCAL_IP" peer "$REMOTE_IP" dev "$NET_IFACE"
+ip link set dev "$NET_IFACE" up
 
-if ip link show tnc1 &>/dev/null; then IFACE="tnc1"; fi
-
-# Inject the dynamically determined IP endpoints mapped to this Node ID
-ip addr add "$LOCAL_IP" peer "$REMOTE_IP" dev "$IFACE" 2>/dev/null || true
-ip link set dev "$IFACE" up
-echo "[✓] Network routing active: $IFACE bound to local $LOCAL_IP -> peer $REMOTE_IP"
-
+echo "[✓] Network routing active: $NET_IFACE bound to local $LOCAL_IP -> peer $REMOTE_IP"
 echo "=== INFRASTRUCTURE INITIALIZATION COMPLETE ==="
