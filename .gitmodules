@@ -11,3 +11,8 @@
     branch = amd64-debian
     ignore = all
 
+[submodule "tty0tty"]
+	path = tty0tty
+	url = https://github.com/MineFartsEmbed/tty0tty
+    ignore = all
+
